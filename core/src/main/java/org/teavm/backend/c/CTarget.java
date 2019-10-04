@@ -112,6 +112,7 @@ import org.teavm.model.lowlevel.ExportDependencyListener;
 import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
 import org.teavm.model.lowlevel.NullCheckTransformation;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
+import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
@@ -150,6 +151,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
     private NullCheckInsertion nullCheckInsertion;
+    private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private NullCheckTransformation nullCheckTransformation;
     private ExportDependencyListener exportDependencyListener = new ExportDependencyListener();
     private int minHeapSize = 4 * 1024 * 1024;
@@ -267,6 +269,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwNullPointerException",
                 void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
+                "throwArrayIndexOutOfBoundsException", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class))
                 .propagate(0, NullPointerException.class.getName())
                 .use();
@@ -324,6 +328,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public void beforeOptimizations(Program program, MethodReader method) {
         nullCheckInsertion.transformProgram(program, method.getReference());
+        boundCheckInsertion.transformProgram(program, method.getReference());
     }
 
     @Override
